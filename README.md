@@ -2,7 +2,11 @@
 
 A jobs panel for OpenChamber 2.x backed by native OpenCode V2 shell/session APIs. See commands, live output, elapsed time, and ownership across a conversation and its recursive subagents. Cancel background jobs without leaving the agent guessing why its process stopped.
 
-**No monitor plugin is required.** If a recorded shell call has `monitor: true`, the panel adds a MONITOR badge and exempts that job from auto-collapse. That flag means monitoring was requested, not that notifications are still flowing. [opencode-monitor](https://github.com/rndmcnlly/opencode-monitor) independently supplies incremental output notifications to the agent.
+**No monitor plugin is required.** If a recorded shell call has `monitor: true`, the panel adds a MONITOR badge and exempts that job from auto-collapse. That flag means monitoring was requested, not that notifications are still flowing. [opencode-monitor](https://github.com/rndmcnlly/opencode-monitor) independently supplies incremental output notifications to the agent. The packages have synergy, but each is useful on its own: human-facing native job visibility here, agent-facing live notifications there.
+
+<a href="./demo/openchamber-background-jobs.png"><img src="./demo/openchamber-background-jobs.png" alt="Jobs panel showing monitored live output alongside a completed job" width="500"></a>
+
+*Historical screenshot from the former companion panel. Representative of the experience; the current panel is named Jobs.*
 
 ## Install
 
@@ -21,7 +25,7 @@ Requires Node 22.18+ and npm. From this directory:
 ```sh
 npm ci
 npm run check
-npm run build
+npm run package
 npm test
 ```
 
