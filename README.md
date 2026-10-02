@@ -12,9 +12,9 @@ A jobs panel for OpenChamber 2.x backed by native OpenCode V2 shell/session APIs
 
 ### Release ZIP
 
-Download `openchamber-jobs.zip` from this repository's GitHub Releases. In **Settings → Extensions → Add**, select its absolute local path or paste the HTTPS URL of the release asset. Allow the local service, then open **Jobs** on the right-hand rail. The ZIP contains everything needed to run: no npm install or build on the user's machine.
+When a release is available, download `openchamber-jobs.zip` from [GitHub Releases](https://github.com/rndmcnlly/openchamber-jobs/releases). In **Settings → Extensions → Add**, select its absolute local path or paste the HTTPS URL of the release asset. Allow the local service, then open **Jobs** on the right-hand rail. The ZIP contains everything needed to run: no npm install or build on the user's machine.
 
-Release publishing is configured but this new repository has not yet been published. GitHub Actions builds and tests the package on pushes and pull requests; pushing a version tag such as `v0.1.0` publishes the ZIP and `SHA256SUMS` to a release. The tag must match `package.json`.
+The [source repository](https://github.com/rndmcnlly/openchamber-jobs) is public; no version tag or release has been published yet. GitHub Actions builds and tests the package on pushes and pull requests; pushing a version tag such as `v0.1.0` publishes the ZIP and `SHA256SUMS` to a release. The tag must match `package.json`.
 
 OpenChamber's Git-version update detection does not apply to ZIP installs. Install a newer ZIP to upgrade, accepting replacement of the existing extension if prompted. Do not install the source repository URL: generated bundles intentionally are not committed.
 
