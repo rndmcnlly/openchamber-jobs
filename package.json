@@ -1,0 +1,29 @@
+{
+  "name": "openchamber-jobs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Native OpenChamber shell jobs, with optional monitor indicators",
+  "engines": { "node": ">=22.18.0" },
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "package": "npm run build && node package.mjs",
+    "connect": "node connect.mjs"
+  },
+  "devDependencies": {
+    "@openchamber/sdk": "^2.0.2",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.9.3"
+  },
+  "openchamber": {
+    "apiVersion": 1,
+    "engines": { "openchamber": ">=2.0.0" },
+    "contributes": {
+      "panel": { "id": "openchamber-jobs", "name": "Jobs", "icon": "service-bell", "entry": "panel/index.html" },
+      "service": { "entry": "service/main.js", "runtime": "host", "permissions": { "exec": ["ps"] } }
+    }
+  }
+}
