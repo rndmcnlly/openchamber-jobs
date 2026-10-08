@@ -28,9 +28,10 @@ button[aria-pressed="true"] { color: var(--oc-primary-text, #345fa5); background
 .running .state { color: var(--oc-info-text, #3e7295); }
 .success .state { color: var(--oc-success-text, #33764b); }
 .failure .state { color: var(--oc-error-text, #a44545); }
+.job.pinned { border-color: color-mix(in srgb, var(--oc-primary, #5080dd) 45%, var(--oc-border, #d5d8df)); }
 .elapsed, .owner { opacity: .65; }
 .owner { margin-top: 6px; overflow-wrap: anywhere; font-size: 11px; }
-.monitor-badge { color: var(--oc-warning-text, #916014); border: 1px solid currentColor; padding: 1px 4px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+.pin-control { padding: 2px 7px; font-size: 11px; }
 .foreground-badge { color: var(--oc-info-text, #3e7295); border: 1px solid currentColor; padding: 1px 4px; border-radius: 4px; font-size: 10px; font-weight: 700; }
 .stop-control { margin-left: auto; color: var(--oc-error-text, #a44545); background: color-mix(in srgb, var(--oc-error, #a44545) 7%, transparent); border-color: color-mix(in srgb, var(--oc-error, #a44545) 35%, transparent); padding: 5px 9px; font-family: var(--oc-font, sans-serif); font-size: 12px; }
 .program, .output-view { max-width: 100%; margin: 0; padding: 10px 12px; overflow: auto; font: 11px/1.55 var(--oc-mono, monospace); white-space: pre; }

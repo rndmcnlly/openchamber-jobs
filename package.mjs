@@ -8,7 +8,7 @@ import { createHash } from "node:crypto"
 const root = fileURLToPath(new URL(".", import.meta.url))
 const dist = join(root, "dist")
 const staging = await mkdtemp(join(tmpdir(), "openchamber-jobs-package-"))
-const files = ["package.json", "README.md", "LICENSE", "connect.mjs", "panel/index.html", "panel/styles.css", "panel/main.js", "service/main.js"]
+const files = ["package.json", "README.md", "LICENSE", "panel/index.html", "panel/styles.css", "panel/main.js"]
 const archive = join(dist, "openchamber-jobs.zip")
 try {
   for (const file of files) {
