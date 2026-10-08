@@ -1,4 +1,3 @@
 node_modules/
 dist/
 panel/main.js
-service/main.js

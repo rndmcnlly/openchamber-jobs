@@ -8,5 +8,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["jobs.ts", "panel/**/*.ts", "service/**/*.ts"]
+  "include": ["jobs.ts", "panel/**/*.ts"]
 }
