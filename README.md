@@ -1,6 +1,6 @@
 # openchamber-jobs
 
-A jobs panel for OpenChamber 2.x backed by native OpenCode V2 shell/session APIs. See commands, live output, elapsed time, and ownership across a conversation and its recursive subagents. Cancel background jobs without leaving the agent guessing why its process stopped.
+A jobs panel for OpenChamber 2.7.3 or newer. See commands, live output, elapsed time, and ownership across a conversation and its recursive subagents. Cancel background jobs through OpenChamber's native shell controls.
 
 **No monitor plugin is required.** If a recorded shell call has `monitor: true`, the panel adds a MONITOR badge and exempts that job from auto-collapse. That flag means monitoring was requested, not that notifications are still flowing. [opencode-monitor](https://github.com/rndmcnlly/opencode-monitor) independently supplies incremental output notifications to the agent. The packages have synergy, but each is useful on its own: human-facing native job visibility here, agent-facing live notifications there.
 
@@ -12,7 +12,7 @@ A jobs panel for OpenChamber 2.x backed by native OpenCode V2 shell/session APIs
 
 ### Release ZIP
 
-When a release is available, download `openchamber-jobs.zip` from [GitHub Releases](https://github.com/rndmcnlly/openchamber-jobs/releases). In **Settings → Extensions → Add**, select its absolute local path or paste the HTTPS URL of the release asset. Allow the local service, then open **Jobs** on the right-hand rail. The ZIP contains everything needed to run: no npm install or build on the user's machine.
+When a release is available, download `openchamber-jobs.zip` from [GitHub Releases](https://github.com/rndmcnlly/openchamber-jobs/releases). In **Settings → Extensions → Add**, select its absolute local path or paste the HTTPS URL of the release asset. Approve shell access, the local service, and read-only OpenCode access, then open **Jobs** on the right-hand rail. The ZIP contains everything needed to run: no npm install or build on the user's machine.
 
 The [source repository](https://github.com/rndmcnlly/openchamber-jobs) is public; no version tag or release has been published yet. GitHub Actions builds and tests the package on pushes and pull requests; pushing a version tag such as `v0.1.0` publishes the ZIP and `SHA256SUMS` to a release. The tag must match `package.json`.
 
@@ -31,31 +31,25 @@ npm test
 
 In **Settings → Extensions → Add**, select the absolute path of this repository root. A folder install uses the checkout directly. Rebuild after source changes; reload the panel for frontend changes and disable/re-enable the extension for service changes.
 
-## Backend connection and compatibility
+## Host access and upgrades
 
-The macOS desktop service automatically discovers OpenChamber's managed OpenCode backend, preferring the instance owned by its host process. It verifies the PID through `/api/info` before connecting. The declared `ps` permission discloses process-environment access used to recover the managed backend password; it is advisory, not a sandbox.
+The [OpenChamber shell API](https://docs.openchamber.dev/sdk/host/#background-shells) supplies live jobs, output, and cancellation. The bundled service uses the [host's read-only OpenCode proxy](https://github.com/openchamber/openchamber/blob/v2.7.3/packages/sdk/GUEST_SERVICES.md#opencode-access) for session history only. Both follow the backend selected by OpenChamber. Jobs does not inspect processes or store OpenCode credentials.
 
-On other platforms, or if discovery cannot select exactly one backend, have an agent inside the intended OpenChamber instance run:
-
-```sh
-node connect.mjs
-```
-
-Run this from the checkout or an extracted release directory. It writes private connection credentials to `~/.config/openchamber-jobs/connection.json`, outside the package and browser frame. On non-macOS systems rerun it after backend restarts. The service also reads the old companion's `~/.config/opencode-monitor/connection.json` when the new file is absent, and accepts legacy cancellation metadata.
+When upgrading from the earlier checkout, reload or replace the extension and approve its updated capabilities in **Settings → Extensions**. The old `connect.mjs` flow is gone. Jobs no longer uses `~/.config/openchamber-jobs/connection.json` or the former monitor companion's connection file. It does not delete those files. Legacy cancellation metadata in message history is still recognized.
 
 The extension's ID is `openchamber-jobs`, distinct from the former companion's `opencode-monitor`. Jobs and Background jobs can coexist during migration. The new extension has independent preferences and service approval; it does not inherit grants or collapse settings. Once Jobs is verified, uninstall the old companion before removing its checkout.
 
-The SDK is 2.x but the manifest/iframe protocol remains apiVersion 1. The extracted Jobs panel has been exercised live against OpenChamber 2.x and OpenCode 2.0.21, including an ordinary job with no monitor input and its live output. The predecessor was tested against OpenCode 2.0.16. This extension requires the V2 shell/session APIs used here, not merely any server with a similar UI. No imports or runtime dependencies link it to the monitor plugin.
+The SDK is 2.7.3 but the manifest/iframe protocol remains `apiVersion: 1`. No imports or runtime dependencies link Jobs to the monitor plugin.
 
 ## Behavior and limits
 
-- Background jobs are recovered from structured assistant tool history, including older pages, then checked against native shell ownership/state. IDs mentioned in prose are never treated as jobs.
+- Live jobs are scoped to the selected session and its descendants by OpenChamber. Structured assistant history supplies older cards and the monitor badge. IDs mentioned in prose are never treated as jobs.
 - Foreground commands occupy a separate, hideable zone while running. They disappear after completion and cannot be cancelled here: their owning agent is waiting for the tool result.
 - Cards preserve output views and text selection using keyed DOM updates. Collapse preferences are stored per conversation. Ordinary completed jobs can auto-collapse; monitored jobs stay expanded.
-- Background cancellation uses native shell removal. Both the owner and the viewing parent receive an intentional-cancellation notice with instructions not to automatically restart a human-cancelled job. Cancellation provenance survives service reloads.
-- Native cancellation removes retained output and may generate Shell.NotFoundError in the agent conversation. Already displayed output survives until panel reload. Notification failures are reported separately from a successful stop.
-- Native records can expire. Structured completion/cancellation metadata restores outcomes where available; missing evidence stays **Record unavailable**, not an invented success or elapsed duration.
-- Only expanded cards read output: 32 KiB per request, keeping the most recent 256 Ki characters. Large session trees can make the first history scan slower. Live output combines stdout/stderr.
+- Background cancellation uses OpenChamber's `stopShell`, which sends the owning agent a stop note. Jobs does not send a second notice to the viewing parent or claim it can confirm note delivery.
+- Native cancellation removes retained output. Already displayed output survives until panel reload.
+- Jobs saves a bounded set of observed outcomes across panel reloads. Structured completion and legacy cancellation metadata can also restore outcomes. Missing evidence stays **Record unavailable** or **Outcome unknown**.
+- Only expanded cards read output. They start at the last 32 KiB and keep the most recent 256 Ki characters. OpenChamber can only retrieve output for shells it observed and OpenCode still retains. Live output combines stdout/stderr.
 - No process execution is implemented here. OpenCode remains the process owner; the extension is a read model and explicit cancellation interface.
 
 ## Development and release

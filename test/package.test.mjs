@@ -12,14 +12,16 @@ import { parseManifestJson } from "@openchamber/sdk/schemas"
 
 const root = new URL("../", import.meta.url)
 const version = JSON.parse(await readFile(new URL("package.json", root), "utf8")).version
-const expectedFiles = ["LICENSE", "README.md", "connect.mjs", "package.json", "panel/index.html", "panel/main.js", "panel/styles.css", "service/main.js"]
+const expectedFiles = ["LICENSE", "README.md", "package.json", "panel/index.html", "panel/main.js", "panel/styles.css", "service/main.js"]
 
 async function checkManifest(directory) {
   const parsed = parseManifestJson(await readFile(new URL("package.json", directory), "utf8"))
   assert.equal(parsed.ok, true, parsed.message)
   assert.equal(parsed.version, version)
   assert.equal(parsed.manifest.contributes.panel.id, "openchamber-jobs")
-  assert.deepEqual(parsed.manifest.contributes.service.permissions.exec, ["ps"])
+  assert.deepEqual(parsed.manifest.contributes.service.provides, ["opencode"])
+  assert.deepEqual(parsed.manifest.contributes.capabilities, ["shells"])
+  assert.deepEqual(parsed.manifest.contributes.service.permissions?.exec ?? [], [])
   for (const file of [parsed.manifest.contributes.panel.entry, "panel/main.js", "panel/styles.css", parsed.manifest.contributes.service.entry]) await access(new URL(file, directory))
 }
 
@@ -32,6 +34,14 @@ test("release ZIP contains only runtime files and its service runs without depen
   assert.equal(await readFile(new URL("dist/SHA256SUMS", root), "utf8"), `${checksum}  openchamber-jobs.zip\n`)
   const directory = await mkdtemp(join(tmpdir(), "openchamber-jobs-release-"))
   let child
+  const calls = []
+  const backend = createServer((request, response) => {
+    calls.push([request.method, request.url, request.headers.authorization])
+    const url = new URL(request.url, "http://localhost")
+    response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify(
+      url.pathname === "/api/session/ses_fixture" ? { data: { id: "ses_fixture", location: { directory: "/project" } } } : { data: [] },
+    ))
+  })
   try {
     execFileSync("unzip", ["-q", zip, "-d", directory])
     await checkManifest(new URL(`file://${directory}/`))
@@ -40,9 +50,12 @@ test("release ZIP contains only runtime files and its service runs without depen
     await once(server, "listening")
     const port = server.address().port
     await new Promise(resolve => server.close(resolve))
+    backend.listen(0, "127.0.0.1")
+    await once(backend, "listening")
     child = spawn(process.execPath, [join(directory, "service/main.js")], {
       cwd: directory,
-      env: { ...process.env, HOME: directory, OPENCHAMBER_SERVICE_PORT: String(port), OPENCHAMBER_SERVICE_TOKEN: "test-token" },
+      env: { HOME: directory, OPENCHAMBER_SERVICE_PORT: String(port), OPENCHAMBER_SERVICE_TOKEN: "test-token",
+        OPENCHAMBER_OPENCODE_URL: `http://127.0.0.1:${backend.address().port}` },
       stdio: ["ignore", "pipe", "pipe"],
     })
     let errors = ""
@@ -58,9 +71,21 @@ test("release ZIP contains only runtime files and its service runs without depen
     assert.equal(response.status, 200)
     assert.deepEqual(await response.json(), { ok: true })
     assert.equal((await fetch(`${url}/health`)).status, 401)
-    assert.equal((await fetch(`${url}/jobs?session=not-a-session`, { headers: { authorization: "Bearer test-token" } })).status, 400)
+    const headers = { authorization: "Bearer test-token" }
+    assert.equal((await fetch(`${url}/history?session=not-a-session`, { headers })).status, 400)
+    assert.equal((await fetch(`${url}/jobs/sh_fixture/stop?session=ses_fixture`, { headers, method: "POST" })).status, 404)
+    const history = await fetch(`${url}/history?session=ses_fixture`, { headers })
+    assert.equal(history.status, 200)
+    assert.deepEqual((await history.json()).jobs, [])
+    assert.deepEqual(calls, [
+      ["GET", "/api/session/ses_fixture", "Bearer test-token"],
+      ["GET", "/api/session?parentID=ses_fixture&limit=100", "Bearer test-token"],
+      ["GET", "/api/session/ses_fixture/message?type=assistant&limit=100&order=desc", "Bearer test-token"],
+      ["GET", "/api/session/ses_fixture/message?type=synthetic&limit=100&order=desc", "Bearer test-token"],
+    ])
   } finally {
     if (child && child.exitCode === null) { child.kill(); await once(child, "exit") }
+    if (backend.listening) await new Promise(resolve => backend.close(resolve))
     await rm(directory, { recursive: true, force: true })
   }
 })
